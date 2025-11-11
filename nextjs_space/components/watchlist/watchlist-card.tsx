@@ -1,3 +1,4 @@
+'use client';
 
 // components/watchlist/watchlist-card.tsx
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
