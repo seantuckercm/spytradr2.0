@@ -8,6 +8,13 @@
       "when": 1762843593232,
       "tag": "0000_wakeful_betty_brant",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1762848918221,
+      "tag": "0001_slim_scorpion",
+      "breakpoints": true
     }
   ]
 }

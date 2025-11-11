@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { 
   LayoutDashboard, 
   Eye, 
+  TrendingUp,
   Scan, 
   Bot, 
   Settings,
@@ -24,6 +25,11 @@ const navItems = [
     title: 'Watchlists',
     href: '/watchlists',
     icon: Eye,
+  },
+  {
+    title: 'Signals',
+    href: '/signals',
+    icon: TrendingUp,
   },
   {
     title: 'Scanner',
