@@ -1,0 +1,77 @@
+
+// components/dashboard/dashboard-nav.tsx
+'use client';
+
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { cn } from '@/lib/utils';
+import { 
+  LayoutDashboard, 
+  Eye, 
+  Scan, 
+  Bot, 
+  Settings,
+  User
+} from 'lucide-react';
+
+const navItems = [
+  {
+    title: 'Dashboard',
+    href: '/dashboard',
+    icon: LayoutDashboard,
+  },
+  {
+    title: 'Watchlists',
+    href: '/watchlists',
+    icon: Eye,
+  },
+  {
+    title: 'Scanner',
+    href: '/scanner',
+    icon: Scan,
+    disabled: true, // Phase 2
+  },
+  {
+    title: 'Agents',
+    href: '/agents',
+    icon: Bot,
+    disabled: true, // Phase 2
+  },
+  {
+    title: 'Settings',
+    href: '/settings',
+    icon: Settings,
+  },
+];
+
+export function DashboardNav() {
+  const pathname = usePathname();
+
+  return (
+    <nav className="fixed left-0 top-16 z-40 h-[calc(100vh-4rem)] w-64 border-r bg-background p-4 lg:block hidden">
+      <div className="space-y-2">
+        {navItems.map((item) => (
+          <Link
+            key={item.href}
+            href={item.disabled ? '#' : item.href}
+            className={cn(
+              'flex items-center space-x-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+              pathname === item.href
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+              item.disabled && 'opacity-50 cursor-not-allowed'
+            )}
+          >
+            <item.icon className="h-4 w-4" />
+            <span>{item.title}</span>
+            {item.disabled && (
+              <span className="ml-auto text-xs bg-muted px-1.5 py-0.5 rounded">
+                Soon
+              </span>
+            )}
+          </Link>
+        ))}
+      </div>
+    </nav>
+  );
+}
