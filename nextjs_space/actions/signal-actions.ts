@@ -9,6 +9,7 @@ import { fetchKrakenOHLCByTimeframe } from '@/lib/api/kraken';
 import { SignalGenerator, TradingSignal } from '@/lib/analysis/signal-generator';
 import { OHLCVCandle } from '@/lib/indicators';
 import { revalidatePath } from 'next/cache';
+import { sendSignalAlert } from '@/lib/alerts/service';
 
 /**
  * Get all active signals for the current user
@@ -218,6 +219,17 @@ export async function analyzeWatchlistItem(watchlistItemId: string) {
               .returning();
 
             generatedSignals.push(newSignal);
+
+            // Send alert notification for new signal
+            try {
+              await sendSignalAlert({
+                userId,
+                signal: newSignal,
+              });
+            } catch (alertError) {
+              console.error('Failed to send alert for signal:', alertError);
+              // Don't fail the entire operation if alert fails
+            }
           }
         }
       }

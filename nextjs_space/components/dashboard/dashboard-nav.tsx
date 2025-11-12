@@ -10,7 +10,8 @@ import {
   Eye, 
   TrendingUp,
   Scan, 
-  Bot, 
+  Bot,
+  Bell, 
   Settings,
   User
 } from 'lucide-react';
@@ -41,6 +42,11 @@ const navItems = [
     title: 'Agents',
     href: '/agents',
     icon: Bot,
+  },
+  {
+    title: 'Alerts',
+    href: '/alerts',
+    icon: Bell,
   },
   {
     title: 'Settings',
