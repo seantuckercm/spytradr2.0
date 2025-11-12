@@ -29,6 +29,13 @@
       "when": 1762923980215,
       "tag": "0003_black_spencer_smythe",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1762929457156,
+      "tag": "0004_light_sunfire",
+      "breakpoints": true
     }
   ]
 }
