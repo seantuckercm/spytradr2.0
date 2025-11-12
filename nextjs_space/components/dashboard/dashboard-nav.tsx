@@ -79,9 +79,41 @@ const navItems: NavItem[] = [
   },
 ];
 
-export function DashboardNav() {
+export function DashboardNav({ mobile = false }: { mobile?: boolean }) {
   const pathname = usePathname();
 
+  // Mobile version - for Sheet/Drawer
+  if (mobile) {
+    return (
+      <nav className="flex flex-col py-4">
+        <div className="space-y-2 px-4">
+          {navItems.map((item) => (
+            <Link
+              key={item.href}
+              href={item.disabled ? '#' : item.href}
+              className={cn(
+                'flex items-center space-x-3 rounded-lg px-3 py-3 text-base font-medium transition-colors',
+                pathname === item.href
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+                item.disabled && 'opacity-50 cursor-not-allowed'
+              )}
+            >
+              <item.icon className="h-5 w-5" />
+              <span>{item.title}</span>
+              {item.disabled && (
+                <span className="ml-auto text-xs bg-muted px-1.5 py-0.5 rounded">
+                  Soon
+                </span>
+              )}
+            </Link>
+          ))}
+        </div>
+      </nav>
+    );
+  }
+
+  // Desktop version - Fixed sidebar
   return (
     <nav className="fixed left-0 top-16 z-40 h-[calc(100vh-4rem)] w-64 border-r bg-background p-4 lg:block hidden">
       <div className="space-y-2">
