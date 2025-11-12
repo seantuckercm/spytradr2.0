@@ -2,7 +2,7 @@
 // components/scanner/opportunity-card.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -13,10 +13,22 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { TrendingUp, TrendingDown, Target, Shield, Clock, BarChart3 } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { TrendingUp, TrendingDown, Target, Shield, Clock, BarChart3, Plus } from 'lucide-react';
 import type { ScannerOpportunity } from '@/actions/scanner-actions';
 import { cn } from '@/lib/utils';
 import { WatchlistItemChart } from '@/components/watchlist/watchlist-item-chart';
+import { getWatchlists } from '@/actions/watchlist-actions';
+import { addWatchlistItem } from '@/actions/watchlist-actions';
+import { useToast } from '@/hooks/use-toast';
+import { LoadingSpinner } from '@/components/shared/loading-spinner';
+import { useRouter } from 'next/navigation';
 
 interface OpportunityCardProps {
   opportunity: ScannerOpportunity;
@@ -24,7 +36,87 @@ interface OpportunityCardProps {
 
 export function OpportunityCard({ opportunity }: OpportunityCardProps) {
   const [showChart, setShowChart] = useState(false);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [watchlists, setWatchlists] = useState<any[]>([]);
+  const [selectedWatchlistId, setSelectedWatchlistId] = useState<string>('');
+  const [isLoadingWatchlists, setIsLoadingWatchlists] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
+  const { toast } = useToast();
+  const router = useRouter();
   const isBuy = opportunity.direction === 'buy';
+
+  // Fetch watchlists when add dialog opens
+  useEffect(() => {
+    if (showAddDialog) {
+      fetchWatchlists();
+    }
+  }, [showAddDialog]);
+
+  const fetchWatchlists = async () => {
+    setIsLoadingWatchlists(true);
+    try {
+      const result = await getWatchlists();
+      if (result.success && result.data) {
+        setWatchlists(result.data);
+        if (result.data.length > 0) {
+          setSelectedWatchlistId(result.data[0].id);
+        }
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to load watchlists',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoadingWatchlists(false);
+    }
+  };
+
+  const handleAddToWatchlist = async () => {
+    if (!selectedWatchlistId) {
+      toast({
+        title: 'Error',
+        description: 'Please select a watchlist',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsAdding(true);
+    try {
+      const result = await addWatchlistItem({
+        watchlistId: selectedWatchlistId,
+        inputSymbol: opportunity.altname || opportunity.pair,
+        timeframes: [opportunity.timeframe],
+        strategies: [opportunity.strategy],
+        confidenceThreshold: Math.round(opportunity.confidence),
+      });
+
+      if (result.success) {
+        toast({
+          title: 'Success',
+          description: `Added ${opportunity.altname} to watchlist`,
+        });
+        setShowAddDialog(false);
+        router.refresh();
+      } else {
+        toast({
+          title: 'Error',
+          description: result.error || 'Failed to add to watchlist',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'An unexpected error occurred',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsAdding(false);
+    }
+  };
 
   const getRiskColor = (risk: string) => {
     switch (risk) {
@@ -139,7 +231,12 @@ export function OpportunityCard({ opportunity }: OpportunityCardProps) {
 
         {/* Actions */}
         <div className="flex gap-2 pt-2">
-          <Button size="sm" className="flex-1">
+          <Button 
+            size="sm" 
+            className="flex-1"
+            onClick={() => setShowAddDialog(true)}
+          >
+            <Plus className="h-4 w-4 mr-2" />
             Add to Watchlist
           </Button>
           <Button
@@ -197,6 +294,93 @@ export function OpportunityCard({ opportunity }: OpportunityCardProps) {
               <h4 className="font-semibold mb-2">Analysis</h4>
               <p className="text-sm text-muted-foreground">{opportunity.reason}</p>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add to Watchlist Dialog */}
+      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add {opportunity.altname} to Watchlist</DialogTitle>
+            <DialogDescription>
+              Select a watchlist to track this trading opportunity
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {isLoadingWatchlists ? (
+              <div className="flex justify-center py-8">
+                <LoadingSpinner />
+              </div>
+            ) : watchlists.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <p className="mb-4">No watchlists found. Create one first!</p>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setShowAddDialog(false);
+                    router.push('/watchlists/new');
+                  }}
+                >
+                  Create Watchlist
+                </Button>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Select Watchlist</label>
+                  <Select
+                    value={selectedWatchlistId}
+                    onValueChange={setSelectedWatchlistId}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose a watchlist" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {watchlists.map((watchlist) => (
+                        <SelectItem key={watchlist.id} value={watchlist.id}>
+                          {watchlist.name}
+                          {watchlist.items?.length > 0 && (
+                            <span className="text-muted-foreground ml-2">
+                              ({watchlist.items.length} pairs)
+                            </span>
+                          )}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="bg-muted p-3 rounded-lg space-y-2 text-sm">
+                  <p className="font-medium">This will add:</p>
+                  <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                    <li>Pair: {opportunity.altname}</li>
+                    <li>Timeframe: {opportunity.timeframe}</li>
+                    <li>Strategy: {opportunity.strategy.replace(/_/g, ' ')}</li>
+                    <li>Confidence Threshold: {Math.round(opportunity.confidence)}%</li>
+                  </ul>
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => setShowAddDialog(false)}
+                    disabled={isAdding}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    className="flex-1"
+                    onClick={handleAddToWatchlist}
+                    disabled={isAdding || !selectedWatchlistId}
+                  >
+                    {isAdding ? <LoadingSpinner size="sm" /> : 'Add to Watchlist'}
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
         </DialogContent>
       </Dialog>
