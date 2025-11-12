@@ -1,11 +1,11 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Trash2, TrendingUp, ChevronDown, ChevronUp, BarChart3 } from 'lucide-react'
+import { Trash2, TrendingUp, ChevronDown, ChevronUp, BarChart3, TrendingDown, Activity } from 'lucide-react'
 import { deleteWatchlistItem } from '@/actions/watchlist-actions'
 import { useToast } from '@/hooks/use-toast'
 import { LoadingSpinner } from '@/components/shared/loading-spinner'
@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/collapsible'
 import { AnalyzeButton } from '@/components/signals/analyze-button'
 import { WatchlistItemChart } from './watchlist-item-chart'
+import { useKrakenWebSocket } from '@/hooks/use-kraken-websocket'
 
 interface WatchlistItemsListProps {
   items: SelectWatchlistItem[]
@@ -39,6 +40,16 @@ export function WatchlistItemsList({ items, watchlistId }: WatchlistItemsListPro
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set())
   const router = useRouter()
   const { toast } = useToast()
+
+  // Extract pairs for WebSocket subscription
+  const pairs = useMemo(() => items.map(item => item.krakenPair), [items])
+
+  // Connect to WebSocket for real-time price updates
+  const { tickerData, isConnected } = useKrakenWebSocket({
+    pairs,
+    channel: 'ticker',
+    autoConnect: true,
+  })
 
   const toggleItem = (itemId: string) => {
     setExpandedItems((prev) => {
@@ -96,6 +107,15 @@ export function WatchlistItemsList({ items, watchlistId }: WatchlistItemsListPro
       {items.map((item) => {
         const isExpanded = expandedItems.has(item.id)
         const primaryTimeframe = item.timeframes?.[0] || '1h'
+        const ticker = tickerData.get(item.krakenPair)
+        
+        // Calculate 24h price change percentage
+        let priceChange = 0
+        let priceChangePercent = 0
+        if (ticker && ticker.open && ticker.close) {
+          priceChange = ticker.close - ticker.open
+          priceChangePercent = (priceChange / ticker.open) * 100
+        }
         
         return (
           <Collapsible
@@ -111,7 +131,41 @@ export function WatchlistItemsList({ items, watchlistId }: WatchlistItemsListPro
                     <Badge variant={item.enabled ? 'default' : 'secondary'}>
                       {item.enabled ? 'Enabled' : 'Disabled'}
                     </Badge>
+                    {isConnected && (
+                      <Badge variant="outline" className="gap-1">
+                        <Activity className="h-3 w-3 text-green-500 animate-pulse" />
+                        Live
+                      </Badge>
+                    )}
                   </div>
+                  
+                  {/* Live Price Display */}
+                  {ticker && (
+                    <div className="flex items-center gap-4 mb-3">
+                      <div>
+                        <div className="text-2xl font-bold">
+                          ${ticker.close.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Bid: ${ticker.bid.toFixed(2)} | Ask: ${ticker.ask.toFixed(2)}
+                        </div>
+                      </div>
+                      <div className={`flex items-center gap-1 ${priceChangePercent >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                        {priceChangePercent >= 0 ? (
+                          <TrendingUp className="h-5 w-5" />
+                        ) : (
+                          <TrendingDown className="h-5 w-5" />
+                        )}
+                        <div className="text-lg font-semibold">
+                          {priceChangePercent >= 0 ? '+' : ''}{priceChangePercent.toFixed(2)}%
+                        </div>
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        <div>24h Vol: {ticker.volume.toLocaleString('en-US', { maximumFractionDigits: 0 })}</div>
+                        <div>24h Range: ${ticker.low.toFixed(2)} - ${ticker.high.toFixed(2)}</div>
+                      </div>
+                    </div>
+                  )}
                   
                   <div className="flex flex-wrap gap-2 mb-2">
                     <div className="text-sm text-muted-foreground">
