@@ -1,27 +1,84 @@
+'use client';
 
 import { PageHeader } from '@/components/shared/page-header';
 import { SignalsGrid } from '@/components/signals/signals-grid';
 import { getUserSignals } from '@/actions/signal-actions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { TrendingUp, TrendingDown, Activity } from 'lucide-react';
+import { TrendingUp, TrendingDown, Activity, Wifi, WifiOff } from 'lucide-react';
+import { useRealtimeSubscription } from '@/hooks/use-realtime-subscription';
+import { useEffect, useState } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
 
-export const dynamic = 'force-dynamic';
+export default function SignalsPage() {
+  const [signals, setSignals] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
 
-export default async function SignalsPage() {
-  const result = await getUserSignals();
-  const signals = result.success && result.data ? result.data : [];
+  // Set up real-time subscription for signals table
+  const { isConnected, lastEvent } = useRealtimeSubscription({
+    tables: ['signals'],
+    autoRevalidate: false, // We'll handle updates manually for better UX
+    onEvent: (event) => {
+      if (event.type === 'db_change' && event.data?.table === 'signals') {
+        // Show toast notification for new signals
+        if (event.data.operation === 'INSERT') {
+          toast({
+            title: 'New Signal Generated',
+            description: `A new ${event.data.data?.direction} signal was generated for ${event.data.data?.altname || 'a trading pair'}`,
+          });
+        }
+        // Refresh signals data
+        loadSignals();
+      }
+    },
+  });
+
+  // Load signals data
+  const loadSignals = async () => {
+    try {
+      const result = await getUserSignals();
+      if (result.success && result.data) {
+        setSignals(result.data.map((s) => s.signal));
+      }
+    } catch (error) {
+      console.error('Error loading signals:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Initial load
+  useEffect(() => {
+    loadSignals();
+  }, []);
 
   // Calculate statistics
-  const buySignals = signals?.filter((s) => s.signal.direction === 'buy').length || 0;
-  const sellSignals = signals?.filter((s) => s.signal.direction === 'sell').length || 0;
-  const highConfidence = signals?.filter((s) => parseFloat(s.signal.confidence) >= 75).length || 0;
+  const buySignals = signals.filter((s) => s.direction === 'buy').length;
+  const sellSignals = signals.filter((s) => s.direction === 'sell').length;
+  const highConfidence = signals.filter((s) => parseFloat(s.confidence) >= 75).length;
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Trading Signals"
-        description="Active signals generated from your watchlists based on technical analysis"
-      />
+      <div className="flex items-center justify-between">
+        <PageHeader
+          title="Trading Signals"
+          description="Active signals generated from your watchlists based on technical analysis"
+        />
+        <Badge variant={isConnected ? 'default' : 'secondary'} className="gap-1">
+          {isConnected ? (
+            <>
+              <Wifi className="h-3 w-3" />
+              Live Updates
+            </>
+          ) : (
+            <>
+              <WifiOff className="h-3 w-3" />
+              Offline
+            </>
+          )}
+        </Badge>
+      </div>
 
       {/* Statistics */}
       <div className="grid gap-4 md:grid-cols-3">
@@ -31,7 +88,7 @@ export default async function SignalsPage() {
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{signals?.length || 0}</div>
+            <div className="text-2xl font-bold">{signals.length}</div>
             <p className="text-xs text-muted-foreground">
               {highConfidence} high confidence
             </p>
@@ -66,9 +123,9 @@ export default async function SignalsPage() {
       </div>
 
       {/* Signals Grid */}
-      <SignalsGrid signals={signals?.map((s) => s.signal) || []} />
+      <SignalsGrid signals={signals} />
 
-      {(signals?.length || 0) > 0 && (
+      {signals.length > 0 && (
         <Card className="bg-muted/50">
           <CardHeader>
             <CardTitle className="text-base">Important Disclaimer</CardTitle>

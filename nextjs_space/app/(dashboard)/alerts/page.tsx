@@ -1,15 +1,58 @@
+'use client';
 
 import { PageHeader } from '@/components/shared/page-header';
 import { getAlertHistory } from '@/actions/alert-actions';
 import { AlertHistoryTable } from '@/components/alerts/alert-history-table';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Bell, Mail, MessageSquare } from 'lucide-react';
+import { Bell, Mail, MessageSquare, Wifi, WifiOff } from 'lucide-react';
+import { useRealtimeSubscription } from '@/hooks/use-realtime-subscription';
+import { useEffect, useState } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
 
-export const dynamic = 'force-dynamic';
+export default function AlertHistoryPage() {
+  const [history, setHistory] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
 
-export default async function AlertHistoryPage() {
-  const result = await getAlertHistory(50);
-  const history = result.success && result.data ? result.data : [];
+  // Set up real-time subscription for alert_history table
+  const { isConnected } = useRealtimeSubscription({
+    tables: ['alert_history'],
+    autoRevalidate: false,
+    onEvent: (event) => {
+      if (event.type === 'db_change' && event.data?.table === 'alert_history') {
+        // Show toast notification for new alerts
+        if (event.data.operation === 'INSERT') {
+          const alert = event.data.data;
+          toast({
+            title: 'New Alert Sent',
+            description: `Alert sent via ${alert?.alert_type || 'unknown'} for ${alert?.altname || 'a trading pair'}`,
+          });
+        }
+        // Refresh history data
+        loadHistory();
+      }
+    },
+  });
+
+  // Load history data
+  const loadHistory = async () => {
+    try {
+      const result = await getAlertHistory(50);
+      if (result.success && result.data) {
+        setHistory(result.data);
+      }
+    } catch (error) {
+      console.error('Error loading alert history:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Initial load
+  useEffect(() => {
+    loadHistory();
+  }, []);
 
   // Calculate stats
   const totalAlerts = history.length;
@@ -20,10 +63,25 @@ export default async function AlertHistoryPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Alert History"
-        description="View all notifications sent by the system"
-      />
+      <div className="flex items-center justify-between">
+        <PageHeader
+          title="Alert History"
+          description="View all notifications sent by the system"
+        />
+        <Badge variant={isConnected ? 'default' : 'secondary'} className="gap-1">
+          {isConnected ? (
+            <>
+              <Wifi className="h-3 w-3" />
+              Live Updates
+            </>
+          ) : (
+            <>
+              <WifiOff className="h-3 w-3" />
+              Offline
+            </>
+          )}
+        </Badge>
+      </div>
 
       {/* Stats Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
