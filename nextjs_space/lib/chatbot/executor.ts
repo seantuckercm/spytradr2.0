@@ -14,7 +14,23 @@ import {
   getUserSignals,
   analyzeWatchlist as analyzeWatchlistAction,
 } from '@/actions/signal-actions';
-import { updateAlertConfig, getAlertConfig } from '@/actions/alert-actions';
+import { 
+  updateAlertConfig, 
+  getAlertConfig,
+  getAlertHistory as getAlertHistoryAction,
+} from '@/actions/alert-actions';
+import {
+  getUserBacktests,
+  createBacktest as createBacktestAction,
+  runBacktest as runBacktestAction,
+  getBacktest,
+} from '@/actions/backtest-actions';
+import {
+  getPerformanceSnapshots,
+  getJournalEntries as getJournalEntriesAction,
+  createJournalEntry as createJournalEntryAction,
+} from '@/actions/performance-actions';
+import { scanMarket as scanMarketAction } from '@/actions/scanner-actions';
 import { getKrakenTicker } from '@/lib/api/kraken';
 import { ToolExecutionResult } from './types';
 
@@ -346,6 +362,188 @@ export async function executePlatformTool(
           success: true,
           data: recommended,
           displayMessage: `Recommended ${recommended.length} trading pairs for ${riskTolerance} risk tolerance`,
+        };
+      }
+
+      // ===== BACKTESTING TOOLS =====
+      case 'getBacktests': {
+        const result = await getUserBacktests();
+        if (!result || !result.success || !result.data) {
+          return {
+            success: false,
+            error: result?.error || 'Failed to get backtests',
+          };
+        }
+        return {
+          success: true,
+          data: result.data,
+          displayMessage: `Found ${result.data.length} backtest(s)`,
+        };
+      }
+
+      case 'createBacktest': {
+        const result = await createBacktestAction({
+          name: parameters.name,
+          description: parameters.description || '',
+          pairs: parameters.pairs,
+          strategies: parameters.strategies,
+          timeframe: parameters.timeframe,
+          startDate: parameters.startDate,
+          endDate: parameters.endDate,
+          initialBalance: parameters.initialBalance || 10000,
+          maxPositionSize: parameters.maxPositionSize || 0.1,
+          stopLossPercent: parameters.stopLossPercent || 2,
+          takeProfitPercent: parameters.takeProfitPercent || 5,
+          minConfidence: parameters.minConfidence || 70,
+        });
+        
+        if (!result.success || !result.data) {
+          return {
+            success: false,
+            error: result.error,
+          };
+        }
+
+        // Run the backtest
+        const runResult = await runBacktestAction(result.data.id);
+        if (!runResult.success) {
+          return {
+            success: false,
+            error: `Backtest created but failed to run: ${runResult.error}`,
+          };
+        }
+
+        return {
+          success: true,
+          data: runResult.data,
+          displayMessage: `Backtest "${parameters.name}" created and executed successfully`,
+        };
+      }
+
+      case 'getBacktestResults': {
+        const result = await getBacktest(parameters.backtestId);
+        if (!result || !result.success || !result.data) {
+          return {
+            success: false,
+            error: result?.error || 'Backtest not found',
+          };
+        }
+        return {
+          success: true,
+          data: result.data,
+          displayMessage: `Retrieved backtest results: ${result.data.backtest.status}`,
+        };
+      }
+
+      // ===== PERFORMANCE ANALYTICS TOOLS =====
+      case 'getPerformanceSnapshot': {
+        const result = await getPerformanceSnapshots(parameters.periodType || 'all_time');
+        if (!result || !result.success || !result.data) {
+          return {
+            success: false,
+            error: result?.error || 'Failed to get performance snapshot',
+          };
+        }
+        
+        const snapshot = result.data[0]; // Get the latest snapshot
+        if (!snapshot) {
+          return {
+            success: true,
+            data: null,
+            displayMessage: 'No performance data available yet',
+          };
+        }
+
+        return {
+          success: true,
+          data: snapshot,
+          displayMessage: `Performance snapshot: ${snapshot.totalTrades} trades, ${snapshot.winRate?.toFixed(1)}% win rate`,
+        };
+      }
+
+      case 'getJournalEntries': {
+        const result = await getJournalEntriesAction(parameters.limit || 10);
+        if (!result || !result.success || !result.data) {
+          return {
+            success: false,
+            error: result?.error || 'Failed to get journal entries',
+          };
+        }
+        return {
+          success: true,
+          data: result.data,
+          displayMessage: `Found ${result.data.length} journal entry(ies)`,
+        };
+      }
+
+      case 'createJournalEntry': {
+        const result = await createJournalEntryAction({
+          signalId: parameters.signalId || null,
+          title: parameters.title,
+          notes: parameters.notes || {},
+          actualEntry: parameters.actualEntry || null,
+          actualExit: parameters.actualExit || null,
+          actualPnl: parameters.actualPnl || null,
+          actualPnlPercent: parameters.actualPnl && parameters.actualEntry
+            ? ((parameters.actualPnl / parameters.actualEntry) * 100)
+            : null,
+          rating: parameters.rating || null,
+        });
+        
+        if (!result.success) {
+          return {
+            success: false,
+            error: result.error,
+          };
+        }
+        
+        return {
+          success: true,
+          data: result.data,
+          displayMessage: `Journal entry "${parameters.title}" created`,
+        };
+      }
+
+      // ===== MARKET SCANNER TOOLS =====
+      case 'scanMarket': {
+        const filters = {
+          timeframe: parameters.timeframe || '1h',
+          strategies: parameters.strategies || ['momentum', 'trend'],
+          minConfidence: parameters.minConfidence || 70,
+          direction: parameters.direction || undefined,
+          risk: parameters.risk || undefined,
+          baseAsset: parameters.baseAsset || undefined,
+          quoteAsset: parameters.quoteAsset || undefined,
+        };
+        
+        const result = await scanMarketAction(filters);
+        if (!result || !result.success || !result.data) {
+          return {
+            success: false,
+            error: result?.error || 'Market scan failed',
+          };
+        }
+        
+        return {
+          success: true,
+          data: result.data,
+          displayMessage: `Market scan complete: ${result.data.opportunities?.length || 0} opportunities found`,
+        };
+      }
+
+      // ===== ALERT MANAGEMENT TOOLS =====
+      case 'getAlertHistory': {
+        const result = await getAlertHistoryAction(parameters.limit || 20);
+        if (!result || !result.success || !result.data) {
+          return {
+            success: false,
+            error: result?.error || 'Failed to get alert history',
+          };
+        }
+        return {
+          success: true,
+          data: result.data,
+          displayMessage: `Found ${result.data.length} alert(s) in history`,
         };
       }
 

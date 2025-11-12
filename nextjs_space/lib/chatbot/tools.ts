@@ -345,4 +345,263 @@ export const PLATFORM_TOOLS = [
       },
     },
   },
+  // ===== BACKTESTING TOOLS =====
+  {
+    type: 'function',
+    function: {
+      name: 'getBacktests',
+      description: 'Get all historical backtests with their results and performance metrics',
+      parameters: {
+        type: 'object',
+        properties: {},
+        required: [],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'createBacktest',
+      description: 'Create and run a new backtest to validate trading strategies against historical data',
+      parameters: {
+        type: 'object',
+        properties: {
+          name: {
+            type: 'string',
+            description: 'Name for the backtest',
+          },
+          description: {
+            type: 'string',
+            description: 'Description of what this backtest is testing',
+          },
+          pairs: {
+            type: 'array',
+            items: {
+              type: 'string',
+            },
+            description: 'Trading pairs to backtest (e.g., ["BTC/USD", "ETH/USD"])',
+          },
+          strategies: {
+            type: 'array',
+            items: {
+              type: 'string',
+              enum: ['momentum', 'trend', 'reversal', 'breakout', 'scalping', 'swing'],
+            },
+            description: 'Strategies to test',
+          },
+          timeframe: {
+            type: 'string',
+            enum: ['1m', '5m', '15m', '30m', '1h', '4h', '1d', '1w', '1M'],
+            description: 'Timeframe for analysis',
+          },
+          startDate: {
+            type: 'string',
+            description: 'Start date for historical data (YYYY-MM-DD)',
+          },
+          endDate: {
+            type: 'string',
+            description: 'End date for historical data (YYYY-MM-DD)',
+          },
+          initialBalance: {
+            type: 'number',
+            description: 'Starting capital for the backtest (in USD)',
+          },
+          stopLossPercent: {
+            type: 'number',
+            description: 'Stop loss percentage (0-100)',
+            minimum: 0,
+            maximum: 100,
+          },
+          takeProfitPercent: {
+            type: 'number',
+            description: 'Take profit percentage (0-100)',
+            minimum: 0,
+            maximum: 100,
+          },
+        },
+        required: ['name', 'pairs', 'strategies', 'timeframe', 'startDate', 'endDate'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'getBacktestResults',
+      description: 'Get detailed results for a specific backtest including all trades and performance metrics',
+      parameters: {
+        type: 'object',
+        properties: {
+          backtestId: {
+            type: 'string',
+            description: 'ID of the backtest to retrieve',
+          },
+        },
+        required: ['backtestId'],
+      },
+    },
+  },
+  // ===== PERFORMANCE ANALYTICS TOOLS =====
+  {
+    type: 'function',
+    function: {
+      name: 'getPerformanceSnapshot',
+      description: 'Get performance analytics snapshot showing trading statistics and metrics',
+      parameters: {
+        type: 'object',
+        properties: {
+          periodType: {
+            type: 'string',
+            enum: ['daily', 'weekly', 'monthly', 'all_time'],
+            description: 'Time period for the performance snapshot',
+          },
+        },
+        required: [],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'getJournalEntries',
+      description: 'Get trade journal entries with reflections and post-trade analysis',
+      parameters: {
+        type: 'object',
+        properties: {
+          limit: {
+            type: 'number',
+            description: 'Number of entries to retrieve',
+            minimum: 1,
+            maximum: 50,
+          },
+        },
+        required: [],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'createJournalEntry',
+      description: 'Create a new trade journal entry to document trades and learnings',
+      parameters: {
+        type: 'object',
+        properties: {
+          signalId: {
+            type: 'string',
+            description: 'Optional signal ID this entry relates to',
+          },
+          title: {
+            type: 'string',
+            description: 'Title for the journal entry',
+          },
+          notes: {
+            type: 'object',
+            description: 'Notes about the trade (pre-trade thoughts, post-trade analysis)',
+          },
+          actualEntry: {
+            type: 'number',
+            description: 'Actual entry price',
+          },
+          actualExit: {
+            type: 'number',
+            description: 'Actual exit price',
+          },
+          actualPnl: {
+            type: 'number',
+            description: 'Actual profit/loss in USD',
+          },
+          rating: {
+            type: 'number',
+            description: 'Rating of the trade (1-5)',
+            minimum: 1,
+            maximum: 5,
+          },
+        },
+        required: ['title'],
+      },
+    },
+  },
+  // ===== MARKET SCANNER TOOLS =====
+  {
+    type: 'function',
+    function: {
+      name: 'scanMarket',
+      description: 'Scan the entire market for trading opportunities based on specified criteria',
+      parameters: {
+        type: 'object',
+        properties: {
+          timeframe: {
+            type: 'string',
+            enum: ['1m', '5m', '15m', '30m', '1h', '4h', '1d', '1w', '1M'],
+            description: 'Timeframe to analyze',
+          },
+          strategies: {
+            type: 'array',
+            items: {
+              type: 'string',
+              enum: ['momentum', 'trend', 'reversal', 'breakout', 'scalping', 'swing'],
+            },
+            description: 'Strategies to use for scanning',
+          },
+          minConfidence: {
+            type: 'number',
+            description: 'Minimum confidence threshold (0-100)',
+            minimum: 0,
+            maximum: 100,
+          },
+          direction: {
+            type: 'string',
+            enum: ['buy', 'sell'],
+            description: 'Filter by signal direction',
+          },
+          risk: {
+            type: 'string',
+            enum: ['low', 'medium', 'high'],
+            description: 'Filter by risk level',
+          },
+          baseAsset: {
+            type: 'string',
+            description: 'Base asset filter (e.g., "BTC", "ETH")',
+          },
+          quoteAsset: {
+            type: 'string',
+            description: 'Quote asset filter (e.g., "USD", "EUR")',
+          },
+        },
+        required: [],
+      },
+    },
+  },
+  // ===== ALERT MANAGEMENT TOOLS =====
+  {
+    type: 'function',
+    function: {
+      name: 'getAlertHistory',
+      description: 'Get alert history showing all notifications sent by the system',
+      parameters: {
+        type: 'object',
+        properties: {
+          limit: {
+            type: 'number',
+            description: 'Number of alerts to retrieve',
+            minimum: 1,
+            maximum: 100,
+          },
+        },
+        required: [],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'getAlertConfig',
+      description: 'Get current alert configuration and notification settings',
+      parameters: {
+        type: 'object',
+        properties: {},
+        required: [],
+      },
+    },
+  },
 ];
