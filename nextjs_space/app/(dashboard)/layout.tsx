@@ -3,6 +3,7 @@
 import { DashboardNav } from '@/components/dashboard/dashboard-nav';
 import { DashboardHeader } from '@/components/dashboard/dashboard-header';
 import { Toaster } from '@/components/ui/toaster';
+import { TeacherModeWrapper } from '@/components/teacher-mode/teacher-mode-wrapper';
 
 export default function DashboardLayout({
   children,
@@ -21,6 +22,7 @@ export default function DashboardLayout({
         </main>
       </div>
       <Toaster />
+      <TeacherModeWrapper />
     </div>
   );
 }

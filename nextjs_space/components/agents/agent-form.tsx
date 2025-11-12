@@ -22,6 +22,7 @@ import { toast } from '@/hooks/use-toast';
 import { LoadingSpinner } from '@/components/shared/loading-spinner';
 import { Slider } from '@/components/ui/slider';
 import { X } from 'lucide-react';
+import { useTeacherMode } from '@/hooks/use-teacher-mode';
 
 const agentSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -44,6 +45,7 @@ const AVAILABLE_STRATEGIES = [
 
 export function AgentForm() {
   const router = useRouter();
+  const { showTip } = useTeacherMode();
   const [loading, setLoading] = useState(false);
   const [pairInput, setPairInput] = useState('');
   const [pairs, setPairs] = useState<string[]>([]);
@@ -112,6 +114,11 @@ export function AgentForm() {
           title: 'Agent Created',
           description: `${data.name} has been created and is now active.`,
         });
+        
+        // Show teacher tips for agent creation
+        showTip('first_agent_created');
+        showTip('agent_running');
+        
         router.push('/agents');
       } else {
         toast({

@@ -4,6 +4,7 @@
 
 import { ClerkProvider } from '@clerk/nextjs';
 import { ThemeProvider } from '@/components/theme-provider';
+import { TeacherModeProvider } from '@/hooks/use-teacher-mode';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -14,7 +15,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
         enableSystem
         disableTransitionOnChange
       >
-        {children}
+        <TeacherModeProvider>
+          {children}
+        </TeacherModeProvider>
       </ThemeProvider>
     </ClerkProvider>
   );

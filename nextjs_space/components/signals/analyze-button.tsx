@@ -8,6 +8,7 @@ import { toast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { LoadingSpinner } from '@/components/shared/loading-spinner';
+import { useTeacherMode } from '@/hooks/use-teacher-mode';
 
 interface AnalyzeButtonProps {
   watchlistId?: string;
@@ -26,9 +27,14 @@ export function AnalyzeButton({
 }: AnalyzeButtonProps) {
   const router = useRouter();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const { showTip } = useTeacherMode();
 
   const handleAnalyze = async () => {
     setIsAnalyzing(true);
+    
+    // Show analysis tip
+    showTip('first_analysis_run');
+    
     try {
       let result;
       
@@ -56,6 +62,12 @@ export function AnalyzeButton({
             ? `Generated ${signalsCount} signal${signalsCount !== 1 ? 's' : ''}`
             : 'No new signals generated',
         });
+        
+        // Show signal generation tip if signals were created
+        if (signalsCount > 0) {
+          showTip('first_signal_generated');
+        }
+        
         router.refresh();
       } else {
         toast({

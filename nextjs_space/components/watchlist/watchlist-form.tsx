@@ -17,6 +17,7 @@ import { createWatchlist } from '@/actions/watchlist-actions';
 import { toast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { LoadingSpinner } from '@/components/shared/loading-spinner';
+import { useTeacherMode } from '@/hooks/use-teacher-mode';
 
 type WatchlistFormData = z.infer<typeof createWatchlistSchema>;
 
@@ -29,6 +30,7 @@ interface WatchlistFormProps {
 export function WatchlistForm({ mode = 'create', defaultValues, onSuccess }: WatchlistFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const { showTip } = useTeacherMode();
   
   const form = useForm({
     resolver: zodResolver(createWatchlistSchema),
@@ -51,6 +53,12 @@ export function WatchlistForm({ mode = 'create', defaultValues, onSuccess }: Wat
         title: 'Success',
         description: 'Watchlist created successfully',
       });
+      
+      // Show teacher tip for first watchlist creation
+      if (mode === 'create') {
+        showTip('first_watchlist_created');
+      }
+      
       form.reset();
       onSuccess?.();
       router.push('/watchlists');

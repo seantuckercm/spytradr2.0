@@ -17,6 +17,7 @@ import { addWatchlistItemSchema } from '@/lib/validators/watchlist'
 import { TIMEFRAMES } from '@/lib/constants/timeframes'
 import { STRATEGIES } from '@/lib/constants/strategies'
 import { Checkbox } from '@/components/ui/checkbox'
+import { useTeacherMode } from '@/hooks/use-teacher-mode'
 
 interface WatchlistItemFormProps {
   watchlistId: string
@@ -28,6 +29,7 @@ export function WatchlistItemForm({ watchlistId }: WatchlistItemFormProps) {
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
   const { toast } = useToast()
+  const { showTip } = useTeacherMode()
   
   const {
     register,
@@ -61,6 +63,13 @@ export function WatchlistItemForm({ watchlistId }: WatchlistItemFormProps) {
           title: 'Success',
           description: 'Trading pair added to watchlist',
         })
+        
+        // Show teacher tips
+        showTip('first_item_added')
+        if (data.strategies && data.strategies.length > 1) {
+          showTip('multiple_strategies')
+        }
+        
         reset()
         router.refresh()
       } else {

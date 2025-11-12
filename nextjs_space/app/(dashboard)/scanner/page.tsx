@@ -9,9 +9,11 @@ import { scanMarket, getScannerFilterOptions } from '@/actions/scanner-actions';
 import type { ScannerFilters as ScannerFiltersType, ScannerOpportunity } from '@/actions/scanner-actions';
 import type { Timeframe } from '@/lib/validators/watchlist';
 import { useToast } from '@/hooks/use-toast';
+import { useTeacherMode } from '@/hooks/use-teacher-mode';
 
 export default function ScannerPage() {
   const { toast } = useToast();
+  const { showTip } = useTeacherMode();
   const [isScanning, setIsScanning] = useState(false);
   const [opportunities, setOpportunities] = useState<ScannerOpportunity[]>([]);
   const [totalScanned, setTotalScanned] = useState<number>(0);
@@ -54,6 +56,10 @@ export default function ScannerPage() {
 
   const handleScan = async () => {
     setIsScanning(true);
+    
+    // Show scanner tip
+    showTip('scanner_used');
+    
     try {
       const result = await scanMarket(filters);
       
