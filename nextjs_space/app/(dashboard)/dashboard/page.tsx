@@ -6,12 +6,20 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Eye, Plus, TrendingUp, Users, Zap, Crown } from 'lucide-react';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { getCurrentProfile } from '@/lib/auth/clerk';
 import { getWatchlists } from '@/actions/watchlist-actions';
 import { DEFAULT_TIER_LIMITS } from '@/db/schema/profiles-schema';
 
 export default async function DashboardPage() {
-  const profile = await getCurrentProfile();
+  let profile;
+  try {
+    profile = await getCurrentProfile();
+  } catch (error) {
+    // Redirect to profile setup if profile doesn't exist
+    redirect('/api/create-profile?redirect=/dashboard');
+  }
+  
   const watchlistsResult = await getWatchlists();
   const watchlists = watchlistsResult.success ? watchlistsResult.data || [] : [];
   
