@@ -431,7 +431,7 @@ export async function executePlatformTool(
         return {
           success: true,
           data: result.data,
-          displayMessage: `Retrieved backtest results: ${result.data.backtest.status}`,
+          displayMessage: `Retrieved backtest results: ${result.data.status}`,
         };
       }
 
@@ -454,10 +454,11 @@ export async function executePlatformTool(
           };
         }
 
+        const winRate = snapshot.winRate ? parseFloat(snapshot.winRate as string) : 0;
         return {
           success: true,
           data: snapshot,
-          displayMessage: `Performance snapshot: ${snapshot.totalTrades} trades, ${snapshot.winRate?.toFixed(1)}% win rate`,
+          displayMessage: `Performance snapshot: ${snapshot.totalTrades} trades, ${winRate.toFixed(1)}% win rate`,
         };
       }
 
@@ -478,16 +479,16 @@ export async function executePlatformTool(
 
       case 'createJournalEntry': {
         const result = await createJournalEntryAction({
-          signalId: parameters.signalId || null,
+          signalId: parameters.signalId || undefined,
           title: parameters.title,
           notes: parameters.notes || {},
-          actualEntry: parameters.actualEntry || null,
-          actualExit: parameters.actualExit || null,
-          actualPnl: parameters.actualPnl || null,
+          actualEntry: parameters.actualEntry || undefined,
+          actualExit: parameters.actualExit || undefined,
+          actualPnl: parameters.actualPnl || undefined,
           actualPnlPercent: parameters.actualPnl && parameters.actualEntry
             ? ((parameters.actualPnl / parameters.actualEntry) * 100)
-            : null,
-          rating: parameters.rating || null,
+            : undefined,
+          rating: parameters.rating || undefined,
         });
         
         if (!result.success) {
@@ -517,7 +518,7 @@ export async function executePlatformTool(
         };
         
         const result = await scanMarketAction(filters);
-        if (!result || !result.success || !result.data) {
+        if (!result || !result.success) {
           return {
             success: false,
             error: result?.error || 'Market scan failed',
@@ -526,8 +527,8 @@ export async function executePlatformTool(
         
         return {
           success: true,
-          data: result.data,
-          displayMessage: `Market scan complete: ${result.data.opportunities?.length || 0} opportunities found`,
+          data: result,
+          displayMessage: `Market scan complete: ${result.opportunities?.length || 0} opportunities found`,
         };
       }
 
