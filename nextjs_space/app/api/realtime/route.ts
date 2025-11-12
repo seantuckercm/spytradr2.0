@@ -28,12 +28,42 @@ export async function GET(request: Request) {
       const encoder = new TextEncoder();
       const sql = createNotificationConnection();
       let isActive = true;
+      let heartbeatInterval: NodeJS.Timeout | null = null;
 
       // Function to send SSE message
       const sendEvent = (data: any) => {
         if (isActive) {
-          const message = `data: ${JSON.stringify(data)}\n\n`;
-          controller.enqueue(encoder.encode(message));
+          try {
+            const message = `data: ${JSON.stringify(data)}\n\n`;
+            controller.enqueue(encoder.encode(message));
+          } catch (err) {
+            // Controller already closed, ignore
+            isActive = false;
+          }
+        }
+      };
+
+      // Cleanup function
+      const cleanup = async () => {
+        if (!isActive) return; // Already cleaned up
+        isActive = false;
+        
+        if (heartbeatInterval) {
+          clearInterval(heartbeatInterval);
+          heartbeatInterval = null;
+        }
+        
+        try {
+          await sql`UNLISTEN db_changes`;
+          await sql.end();
+        } catch (err) {
+          // Ignore cleanup errors
+        }
+        
+        try {
+          controller.close();
+        } catch (err) {
+          // Controller already closed, ignore
         }
       };
 
@@ -63,22 +93,12 @@ export async function GET(request: Request) {
         });
 
         // Keep connection alive with periodic heartbeat
-        const heartbeatInterval = setInterval(() => {
-          if (isActive) {
-            sendEvent({ type: 'heartbeat', timestamp: new Date().toISOString() });
-          } else {
-            clearInterval(heartbeatInterval);
-          }
+        heartbeatInterval = setInterval(() => {
+          sendEvent({ type: 'heartbeat', timestamp: new Date().toISOString() });
         }, 30000); // 30 seconds
 
         // Handle client disconnect
-        request.signal.addEventListener('abort', async () => {
-          isActive = false;
-          clearInterval(heartbeatInterval);
-          await sql`UNLISTEN db_changes`;
-          await sql.end();
-          controller.close();
-        });
+        request.signal.addEventListener('abort', cleanup);
       } catch (err) {
         console.error('Error setting up realtime connection:', err);
         sendEvent({
@@ -86,7 +106,7 @@ export async function GET(request: Request) {
           message: 'Failed to establish realtime connection',
           timestamp: new Date().toISOString(),
         });
-        controller.close();
+        await cleanup();
       }
     },
   });
