@@ -97,7 +97,7 @@ export function CandlestickChart({
 
       chartRef.current = chart;
 
-      // Add candlestick series using the new v5 API
+      // Add candlestick series - cast to any for v5 API compatibility
       const candlestickSeries = (chart as any).addCandlestickSeries({
         upColor: '#10b981',
         downColor: '#ef4444',
@@ -143,8 +143,8 @@ export function CandlestickChart({
         volumeSeries.setData(volumeData);
       }
 
-      // Add markers (e.g., entry/exit points) - API changed in v5
-      if (markers.length > 0 && (candlestickSeries as any).setMarkers) {
+      // Add markers (e.g., entry/exit points)
+      if (markers.length > 0) {
         const formattedMarkers = markers.map((m) => ({
           time: m.time as Time,
           position: m.position,
@@ -155,14 +155,14 @@ export function CandlestickChart({
         (candlestickSeries as any).setMarkers(formattedMarkers);
       }
 
-      // Add price lines (e.g., stop loss, take profit) - API changed in v5
-      if (priceLines.length > 0 && (candlestickSeries as any).createPriceLine) {
+      // Add price lines (e.g., stop loss, take profit)
+      if (priceLines.length > 0) {
         priceLines.forEach((line) => {
           (candlestickSeries as any).createPriceLine({
             price: line.price,
             color: line.color,
-            lineWidth: line.lineWidth as any,
-            lineStyle: line.lineStyle as any,
+            lineWidth: line.lineWidth as LineWidth,
+            lineStyle: line.lineStyle as LineStyle,
             axisLabelVisible: line.axisLabelVisible,
             title: line.title,
           });

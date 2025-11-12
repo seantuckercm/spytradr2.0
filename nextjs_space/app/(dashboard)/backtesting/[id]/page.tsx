@@ -2,6 +2,7 @@ import { getBacktest } from '@/actions/backtest-actions';
 import { PageHeader } from '@/components/shared/page-header';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { BacktestChart } from '@/components/backtesting/backtest-chart';
 import { redirect } from 'next/navigation';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 
@@ -80,6 +81,9 @@ export default async function BacktestDetailPage({ params }: { params: { id: str
               </div>
             </div>
           </Card>
+
+          {/* Backtest Chart Visualization */}
+          <BacktestChart backtest={backtest} />
 
           {/* Recent Trades */}
           {backtest.trades && backtest.trades.length > 0 && (
