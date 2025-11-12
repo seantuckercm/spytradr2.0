@@ -13,7 +13,8 @@ import {
   Bot,
   Bell, 
   Settings,
-  User
+  User,
+  Sparkles
 } from 'lucide-react';
 
 const navItems = [
@@ -42,6 +43,11 @@ const navItems = [
     title: 'Agents',
     href: '/agents',
     icon: Bot,
+  },
+  {
+    title: 'AI Copilot',
+    href: '/copilot',
+    icon: Sparkles,
   },
   {
     title: 'Alerts',
