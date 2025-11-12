@@ -48,7 +48,6 @@ export class BacktestEngine {
   private positions: BacktestPosition[];
   private trades: InsertBacktestTrade[];
   private balanceHistory: { time: Date; balance: number }[];
-  private signalGenerator: SignalGenerator;
 
   constructor(config: BacktestConfig) {
     this.config = config;
@@ -56,7 +55,6 @@ export class BacktestEngine {
     this.positions = [];
     this.trades = [];
     this.balanceHistory = [{ time: config.startDate, balance: config.initialBalance }];
-    this.signalGenerator = new SignalGenerator();
   }
 
   async run(ohlcvData: Map<string, OHLCVCandle[]>): Promise<BacktestResult> {
@@ -90,10 +88,13 @@ export class BacktestEngine {
 
         // Try each strategy
         for (const strategy of this.config.strategies) {
-          const signal = await this.signalGenerator.generate(historicalData, {
+          // Create a new SignalGenerator for this analysis
+          const signalGenerator = new SignalGenerator(historicalData, {
             strategy,
             confidenceThreshold: this.config.minConfidence,
           });
+          
+          const signal = signalGenerator.generateSignal();
 
           if (signal && signal.confidence >= this.config.minConfidence) {
             // Check if we can open a new position

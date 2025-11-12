@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { db } from '@/db';
 import { performanceSnapshotsTable, tradeJournalTable } from '@/db/schema/performance-schema';
 import { signalsTable } from '@/db/schema/signals-schema';
+import { watchlistItemsTable, watchlistsTable } from '@/db/schema/watchlists-schema';
 import { requireAuth } from '@/lib/auth/clerk';
 import { eq, and, desc, gte, lte, sql } from 'drizzle-orm';
 
@@ -17,17 +18,24 @@ export async function calculatePerformanceSnapshot(
     const userId = await requireAuth();
 
     // Get all closed signals in the period
-    const signals = await db
-      .select()
+    // Get all closed signals for the user by joining with watchlists
+    const signalsData = await db
+      .select({
+        signal: signalsTable,
+      })
       .from(signalsTable)
+      .innerJoin(watchlistItemsTable, eq(signalsTable.watchlistItemId, watchlistItemsTable.id))
+      .innerJoin(watchlistsTable, eq(watchlistItemsTable.watchlistId, watchlistsTable.id))
       .where(
         and(
-          eq(signalsTable.userId, userId),
+          eq(watchlistsTable.ownerId, userId),
           eq(signalsTable.status, 'closed'),
           gte(signalsTable.createdAt, periodStart),
           lte(signalsTable.createdAt, periodEnd)
         )
       );
+    
+    const signals = signalsData.map(row => row.signal);
 
     if (signals.length === 0) {
       return {
