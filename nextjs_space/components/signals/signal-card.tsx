@@ -4,13 +4,14 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { TrendingUp, TrendingDown, X, Clock, Target, Shield } from 'lucide-react';
+import { TrendingUp, TrendingDown, X, Clock, Target, Shield, BarChart3 } from 'lucide-react';
 import { SelectSignal } from '@/db/schema';
 import { closeSignal } from '@/actions/signal-actions';
 import { toast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { LoadingSpinner } from '@/components/shared/loading-spinner';
+import Link from 'next/link';
 
 interface SignalCardProps {
   signal: SelectSignal;
@@ -160,6 +161,14 @@ export function SignalCard({ signal }: SignalCardProps) {
               {new Date(signal.createdAt).toLocaleString()}
             </span>
           </div>
+
+          {/* View Details Button */}
+          <Link href={`/signals/${signal.id}`} className="block">
+            <Button variant="outline" className="w-full" size="sm">
+              <BarChart3 className="h-4 w-4 mr-2" />
+              View Chart & Details
+            </Button>
+          </Link>
         </div>
       </CardContent>
     </Card>

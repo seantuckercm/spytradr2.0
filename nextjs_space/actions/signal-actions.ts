@@ -438,3 +438,51 @@ export async function updateSignalStatus(
     };
   }
 }
+
+/**
+ * Get a single signal with details and chart data
+ */
+export async function getSignal(signalId: string) {
+  try {
+    const userId = await requireAuth();
+
+    const signal = await db.query.signalsTable.findFirst({
+      where: eq(signalsTable.id, signalId),
+      with: {
+        watchlistItem: {
+          with: {
+            watchlist: true,
+          },
+        },
+      },
+    });
+
+    if (!signal) {
+      return { success: false, error: 'Signal not found' };
+    }
+
+    // For watchlist-based signals, verify ownership
+    if (signal.watchlistItem && signal.watchlistItem.watchlist.ownerId !== userId) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    // Fetch OHLC data for the chart
+    const pair = signal.krakenPair;
+    const timeframe = signal.timeframe;
+    
+    // Get data from when the signal was created (or up to 100 candles)
+    const sinceTimestamp = Math.floor(signal.createdAt.getTime() / 1000) - (100 * 60); // ~100 minutes of data
+    const ohlcResult = await fetchKrakenOHLCByTimeframe(pair, timeframe, sinceTimestamp);
+
+    return { 
+      success: true, 
+      data: {
+        signal,
+        ohlcData: ohlcResult.success ? ohlcResult.data : []
+      }
+    };
+  } catch (error) {
+    console.error('Error fetching signal:', error);
+    return { success: false, error: 'Failed to fetch signal' };
+  }
+}

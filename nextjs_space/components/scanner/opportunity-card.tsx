@@ -2,18 +2,28 @@
 // components/scanner/opportunity-card.tsx
 'use client';
 
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { TrendingUp, TrendingDown, Target, Shield, Clock } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { TrendingUp, TrendingDown, Target, Shield, Clock, BarChart3 } from 'lucide-react';
 import type { ScannerOpportunity } from '@/actions/scanner-actions';
 import { cn } from '@/lib/utils';
+import { WatchlistItemChart } from '@/components/watchlist/watchlist-item-chart';
 
 interface OpportunityCardProps {
   opportunity: ScannerOpportunity;
 }
 
 export function OpportunityCard({ opportunity }: OpportunityCardProps) {
+  const [showChart, setShowChart] = useState(false);
   const isBuy = opportunity.direction === 'buy';
 
   const getRiskColor = (risk: string) => {
@@ -132,11 +142,64 @@ export function OpportunityCard({ opportunity }: OpportunityCardProps) {
           <Button size="sm" className="flex-1">
             Add to Watchlist
           </Button>
-          <Button size="sm" variant="outline" className="flex-1">
+          <Button
+            size="sm"
+            variant="outline"
+            className="flex-1"
+            onClick={() => setShowChart(true)}
+          >
+            <BarChart3 className="h-4 w-4 mr-2" />
             View Chart
           </Button>
         </div>
       </CardContent>
+
+      {/* Chart Dialog */}
+      <Dialog open={showChart} onOpenChange={setShowChart}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {opportunity.altname} - {opportunity.direction.toUpperCase()} Signal
+            </DialogTitle>
+            <DialogDescription>
+              {opportunity.strategy.replace(/_/g, ' ')} strategy on {opportunity.timeframe} timeframe
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {/* Price Levels Info */}
+            <div className="grid grid-cols-3 gap-4">
+              <div className="text-center p-3 bg-muted rounded-lg">
+                <div className="text-xs text-muted-foreground mb-1">Entry Price</div>
+                <div className="text-lg font-bold">${opportunity.entryPrice.toFixed(2)}</div>
+              </div>
+              <div className="text-center p-3 bg-red-500/10 rounded-lg">
+                <div className="text-xs text-muted-foreground mb-1">Stop Loss</div>
+                <div className="text-lg font-bold text-red-500">
+                  ${opportunity.stopLoss.toFixed(2)}
+                </div>
+              </div>
+              <div className="text-center p-3 bg-green-500/10 rounded-lg">
+                <div className="text-xs text-muted-foreground mb-1">Take Profit</div>
+                <div className="text-lg font-bold text-green-500">
+                  ${opportunity.takeProfit.toFixed(2)}
+                </div>
+              </div>
+            </div>
+
+            {/* Chart */}
+            <WatchlistItemChart
+              krakenPair={opportunity.pair}
+              timeframe={opportunity.timeframe}
+            />
+
+            {/* Analysis */}
+            <div className="p-4 bg-muted rounded-lg">
+              <h4 className="font-semibold mb-2">Analysis</h4>
+              <p className="text-sm text-muted-foreground">{opportunity.reason}</p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
