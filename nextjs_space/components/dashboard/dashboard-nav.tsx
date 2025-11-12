@@ -41,7 +41,6 @@ const navItems = [
     title: 'Agents',
     href: '/agents',
     icon: Bot,
-    disabled: true, // Phase 2
   },
   {
     title: 'Settings',

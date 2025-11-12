@@ -6,3 +6,4 @@ export * from './pending-profiles-schema';
 export * from './trading-pairs-schema';
 export * from './watchlists-schema';
 export * from './signals-schema';
+export * from './scheduled-agents-schema';

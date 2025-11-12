@@ -8,7 +8,7 @@ export const signalsTable = pgTable(
   'signals',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    watchlistItemId: uuid('watchlist_item_id').notNull().references(() => watchlistItemsTable.id, { onDelete: 'cascade' }),
+    watchlistItemId: uuid('watchlist_item_id').references(() => watchlistItemsTable.id, { onDelete: 'cascade' }),
     
     // Trading pair info
     krakenPair: varchar('kraken_pair', { length: 50 }).notNull(),

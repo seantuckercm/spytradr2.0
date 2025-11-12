@@ -1,0 +1,1 @@
+ALTER TABLE "signals" ALTER COLUMN "watchlist_item_id" DROP NOT NULL;
