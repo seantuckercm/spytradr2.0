@@ -8,3 +8,5 @@ export * from './watchlists-schema';
 export * from './signals-schema';
 export * from './scheduled-agents-schema';
 export * from './alerts-schema';
+export * from './backtests-schema';
+export * from './performance-schema';

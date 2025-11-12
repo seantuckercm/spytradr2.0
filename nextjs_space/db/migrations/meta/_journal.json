@@ -36,6 +36,13 @@
       "when": 1762929457156,
       "tag": "0004_light_sunfire",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1762934225516,
+      "tag": "0005_minor_zombie",
+      "breakpoints": true
     }
   ]
 }

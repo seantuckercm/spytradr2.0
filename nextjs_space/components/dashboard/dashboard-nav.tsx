@@ -14,7 +14,9 @@ import {
   Bell, 
   Settings,
   User,
-  Sparkles
+  Sparkles,
+  Activity,
+  BarChart3
 } from 'lucide-react';
 
 const navItems = [
@@ -43,6 +45,16 @@ const navItems = [
     title: 'Agents',
     href: '/agents',
     icon: Bot,
+  },
+  {
+    title: 'Backtesting',
+    href: '/backtesting',
+    icon: Activity,
+  },
+  {
+    title: 'Performance',
+    href: '/performance',
+    icon: BarChart3,
   },
   {
     title: 'AI Copilot',
