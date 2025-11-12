@@ -19,7 +19,14 @@ import {
   BarChart3
 } from 'lucide-react';
 
-const navItems = [
+interface NavItem {
+  title: string;
+  href: string;
+  icon: typeof LayoutDashboard;
+  disabled?: boolean;
+}
+
+const navItems: NavItem[] = [
   {
     title: 'Dashboard',
     href: '/dashboard',
@@ -39,7 +46,6 @@ const navItems = [
     title: 'Scanner',
     href: '/scanner',
     icon: Scan,
-    disabled: true, // Phase 2
   },
   {
     title: 'Agents',
